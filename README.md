@@ -4,6 +4,7 @@ Sitio estático con los resultados de la prueba de periodo (Cuadernillo n.º 1) 
 
 ## Funciones
 
+- **Pestaña «Análisis general»** (6.° a 10.°): promedios por grado, áreas en todos los grados, fortalezas y retos, comparativo de grupos, mejores resultados y CSV consolidado (`#general`).
 - **Pestañas por grado** y filtro por **grupo** (el enlace conserva el grado y el grupo, por ejemplo `#grado-6-g2`).
 - **Buscador global** de estudiantes en todos los grados (`Ctrl K`).
 - Resultados **por área**, **comparativo por grupo**, **tabla de estudiantes** ordenable y **análisis por pregunta**.

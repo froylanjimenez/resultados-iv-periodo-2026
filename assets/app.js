@@ -58,11 +58,13 @@ for (const g of GR) {
 const state = {grade: null, grupo: '', q: '', sortKey: 'name', sortDir: 1};
 const firstReady = GR.find(g => RES[g.grade] && RES[g.grade].status !== 'pendiente');
 function readHash() {
+  if (location.hash === '#general') { state.grade = 'G'; state.grupo = ''; return; }
   const m = location.hash.match(/^#grado-(\d+)(?:-g(\d+))?$/);
   state.grade = m && GR.some(g => g.grade == m[1]) ? +m[1] : (firstReady ? firstReady.grade : GR[0].grade);
   state.grupo = m && m[2] ? `${state.grade}-${m[2]}` : '';
 }
 function writeHash() {
+  if (state.grade === 'G') { if (location.hash !== '#general') history.replaceState(null, '', '#general'); return; }
   const h = `#grado-${state.grade}${state.grupo && /-\d+$/.test(state.grupo) ? '-g' + state.grupo.split('-')[1] : ''}`;
   if (location.hash !== h) history.replaceState(null, '', h);
 }
@@ -79,8 +81,8 @@ function renderTabs() {
   $('#tabs').innerHTML = GR.map(g => {
     const d = RES[g.grade], st = !d || d.status === 'pendiente' ? 'Pendiente' : d.status === 'sesion1' ? 'Sesión 1' : `${d.students.length} estudiantes`;
     return `<button class="tab" role="tab" aria-selected="${g.grade === state.grade}" data-g="${g.grade}">${g.grade}.° ${esc(g.name)}<small>${st}</small></button>`;
-  }).join('');
-  $$('#tabs .tab').forEach(b => b.onclick = () => { state.grade = +b.dataset.g; state.grupo = ''; state.q = ''; writeHash(); render(); });
+  }).join('') + `<button class="tab" role="tab" aria-selected="${state.grade === 'G'}" data-g="G">Análisis general<small>6.° a 10.°</small></button>`;
+  $$('#tabs .tab').forEach(b => b.onclick = () => { state.grade = b.dataset.g === 'G' ? 'G' : +b.dataset.g; state.grupo = ''; state.q = ''; writeHash(); render(); });
 }
 
 // ---------- Vista de grado ----------
@@ -88,6 +90,7 @@ const DL = '<svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16
 const AWARD = '<svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="6"/><path d="m8.5 14-1.5 7 5-3 5 3-1.5-7"/></svg>';
 function render() {
   renderTabs();
+  if (state.grade === 'G') { $('#foot').textContent = `${C.institucion} (${C.sigla}) · ${C.prueba} · ${C.periodo} ${C.anio}. Escala de 0 a 100 (porcentaje de aciertos). Actualizado: ${window.ACTUALIZADO || ''}.`; renderGeneral(); return; }
   const d = RES[state.grade];
   $('#foot').textContent = `${C.institucion} (${C.sigla}) · ${C.prueba} · ${C.periodo} ${C.anio}. Escala de 0 a 100 (porcentaje de aciertos). Actualizado: ${window.ACTUALIZADO || ''}.`;
   if (!d || d.status === 'pendiente') {
@@ -343,6 +346,73 @@ document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.ke
 // ---------- Utilidades ----------
 $$('dialog').forEach(dl => { dl.addEventListener('click', e => { if (e.target === dl || e.target.closest('[data-close]')) dl.close(); }); });
 let tt; function toast(m) { let t = $('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); } t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, 2600); }
+
+// ---------- Análisis general ----------
+function hbars(rows, label) {
+  const W = 540, rowH = 30, padL = Math.max(110, 12 + 6.6 * Math.max(...rows.map(r => r.label.length))), padR = 48, H = rows.length * rowH + 22, x = v => padL + (W - padL - padR) * v / 100;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${esc(label)}">`;
+  [0, 25, 50, 75, 100].forEach(t => s += `<line x1="${x(t)}" x2="${x(t)}" y1="0" y2="${H - 18}" stroke="var(--line)"/><text x="${x(t)}" y="${H - 4}" text-anchor="middle">${t}</text>`);
+  s += `<line x1="${x(60)}" x2="${x(60)}" y1="0" y2="${H - 18}" stroke="var(--basico)" stroke-dasharray="3 3"/>`;
+  rows.forEach((r, i) => { const y = i * rowH + 6;
+    s += `<text x="${padL - 8}" y="${y + 13}" text-anchor="end" style="fill:var(--ink)">${esc(r.label)}</text><rect x="${x(0)}" y="${y + 2}" width="${Math.max(0, x(r.v) - x(0))}" height="16" rx="3" fill="${r.color || 'var(--s1)'}"><title>${esc(r.label)}: ${fmt(r.v)} %</title></rect><text x="${x(r.v) + 5}" y="${y + 14}" style="fill:var(--ink);font-weight:700">${fmt(r.v, 0)} %</text>`; });
+  return s + '</svg>';
+}
+function renderGeneral() {
+  const ds = GR.map(g => RES[g.grade]).filter(d => d && d.status !== 'pendiente');
+  const all = ds.flatMap(d => d.students);
+  const am = (list, a) => mean(list.filter(s => s.a[a]).map(s => s.p[a]));
+  const gmean = d => mean(d.students.map(s => s.tp));
+  const okp = list => 100 * list.filter(s => level(s.tp) !== 'Bajo').length / list.length;
+  const byG = [...ds].sort((a, b) => gmean(b) - gmean(a));
+  const areas = []; ds.forEach(d => d.areas.forEach(a => { if (!areas.includes(a.name)) areas.push(a.name); }));
+  const areaAll = areas.map(a => ({a, m: am(all, a), n: ds.filter(d => d.areas.some(x => x.name === a)).length})).sort((x, y) => y.m - x.m);
+  const groups = ds.flatMap(d => d.groups.filter(g => g !== 'Sin grupo').map(g => { const ss = d.students.filter(s => s.grupo === g);
+    const ar = d.areas.map(a => ({a: a.name, m: am(ss, a.name)})).sort((x, y) => y.m - x.m);
+    return {d, g, ss, m: mean(ss.map(s => s.tp)), ok: okp(ss), best: ar[0], worst: ar.at(-1)}; })).sort((a, b) => b.m - a.m);
+  $('#view').innerHTML = `
+  <div class="toolbar"><h1>Análisis general · 6.° a 10.°</h1>
+    <button class="btn" id="bDlAll" type="button">${DL} CSV consolidado</button></div>
+  <div class="grid kpis">${[
+    [all.length, 'Estudiantes evaluados', `${ds.length} grados · ${groups.length} grupos`],
+    [fmt(mean(all.map(s => s.tp))) + ' %', 'Promedio institucional', `Nota promedio ${fmtN(nota(mean(all.map(s => s.tp))))}`],
+    [fmt(okp(all), 0) + ' %', 'Básico o superior', `${all.filter(s => level(s.tp) !== 'Bajo').length} estudiantes con nota ≥ 60`],
+    [`${byG[0].grade}.°`, 'Grado con mejor promedio', `${byG[0].name} · ${fmt(gmean(byG[0]), 0)} %`],
+    [`${byG.at(-1).grade}.°`, 'Grado con menor promedio', `${byG.at(-1).name} · ${fmt(gmean(byG.at(-1)), 0)} %`],
+  ].map(([v, l, x]) => `<div class="card kpi"><div class="v">${v}</div><div class="l">${esc(l)}</div><div class="d">${esc(x)}</div></div>`).join('')}</div>
+
+  <section><h2>Resultados por grado</h2><p class="sub">Promedio de aciertos de cada grado y distribución de sus estudiantes por nivel de desempeño.</p>
+    <div class="grid two"><div class="card"><h3>Promedio por grado</h3>${hbars(ds.map(d => ({label: `${d.grade}.° ${d.name}`, v: gmean(d)})), 'Promedio por grado')}</div>
+    <div class="card"><h3>Niveles de desempeño por grado</h3><div class="legend" style="margin-bottom:8px">${LV.map(l => `<span><i class="sw" style="background:${LVC[l]}"></i>${l}</span>`).join('')}</div>
+    ${ds.map(d => { const c = LV.map(l => d.students.filter(s => level(s.tp) === l).length), n = d.students.length;
+      return `<div class="arow"><span>${d.grade}.° ${esc(d.name)}</span><div class="dist" title="${LV.map((l, i) => `${l}: ${c[i]}`).join(' · ')}">${c.map((k, i) => k ? `<i style="width:${100 * k / n}%;background:${LVC[LV[i]]}"></i>` : '').join('')}</div></div>`; }).join('')}
+    <div class="scroll" style="margin-top:12px"><table><thead><tr><th>Grado</th><th class="num">Est.</th>${LV.map(l => `<th class="num">${l}</th>`).join('')}</tr></thead><tbody>${ds.map(d => `<tr><td>${d.grade}.°</td><td class="num">${d.students.length}</td>${LV.map(l => { const k = d.students.filter(s => level(s.tp) === l).length; return `<td class="num">${k} <span class="muted small">(${fmt(100 * k / d.students.length, 0)} %)</span></td>`; }).join('')}</tr>`).join('')}</tbody></table></div></div></div></section>
+
+  <section><h2>Áreas en todos los grados</h2><p class="sub">Promedio de aciertos (%) por área y grado. La última columna es el promedio institucional del área.</p>
+    <div class="scroll"><table><thead><tr><th>Área</th>${ds.map(d => `<th class="num">${d.grade}.°</th>`).join('')}<th class="num">Institución</th></tr></thead><tbody>
+    ${areas.map(a => `<tr><td><b>${esc(a)}</b></td>${ds.map(d => `<td>${cell(d.areas.some(x => x.name === a) ? am(d.students, a) : null)}</td>`).join('')}<td>${cell(am(all, a))}</td></tr>`).join('')}
+    <tr style="font-weight:700"><td>Total</td>${ds.map(d => `<td>${cell(gmean(d))}</td>`).join('')}<td>${cell(mean(all.map(s => s.tp)))}</td></tr></tbody></table></div>
+    <div class="grid two" style="margin-top:12px">
+      <div class="card"><h3>Áreas con mejor desempeño</h3>${hbars(areaAll.slice(0, 5).map(o => ({label: o.a, v: o.m, color: 'var(--alto)'})), 'Áreas con mejor desempeño')}</div>
+      <div class="card"><h3>Áreas por fortalecer</h3>${hbars(areaAll.slice(-5).reverse().map(o => ({label: o.a, v: o.m, color: 'var(--bajo)'})), 'Áreas por fortalecer')}</div></div></section>
+
+  <section><h2>Fortalezas y retos por grado</h2><p class="sub">Área con el promedio más alto y más bajo en cada grado.</p>
+    <div class="scroll"><table><thead><tr><th>Grado</th><th>Promedio</th><th>Área más alta</th><th class="num">%</th><th>Área más baja</th><th class="num">%</th><th class="num">Áreas en Bajo (&lt; 60)</th></tr></thead><tbody>
+    ${ds.map(d => { const ar = d.areas.map(a => ({a: a.name, m: am(d.students, a.name)})).sort((x, y) => y.m - x.m);
+      return `<tr><td><b>${d.grade}.° ${esc(d.name)}</b></td><td>${cell(gmean(d))}</td><td>${esc(ar[0].a)}</td><td>${cell(ar[0].m)}</td><td>${esc(ar.at(-1).a)}</td><td>${cell(ar.at(-1).m)}</td><td class="num">${ar.filter(x => x.m < 60).length} de ${ar.length}</td></tr>`; }).join('')}</tbody></table></div></section>
+
+  <section><h2>Comparativo de grupos</h2><p class="sub">Todos los grupos de 6.° a 10.° ordenados por promedio de aciertos. Haz clic en un grupo para ver su detalle.</p>
+    <div class="scroll" style="max-height:70vh"><table><thead><tr><th class="num">#</th><th>Grupo</th><th class="num">Est.</th><th>Promedio</th><th class="num">Básico o superior</th><th>Área más alta</th><th>Área más baja</th></tr></thead><tbody>
+    ${groups.map((o, i) => `<tr class="st" data-gg="${o.d.grade}|${esc(o.g)}" tabindex="0"><td class="num muted">${i + 1}</td><td><b>${esc(o.g)}</b></td><td class="num">${o.ss.length}</td><td>${cell(o.m)}</td><td class="num">${fmt(o.ok, 0)} %</td><td class="small">${esc(o.best.a)} (${fmt(o.best.m, 0)})</td><td class="small">${esc(o.worst.a)} (${fmt(o.worst.m, 0)})</td></tr>`).join('')}</tbody></table></div></section>
+
+  <section><h2>Mejores resultados por grado</h2><p class="sub">Los tres puntajes totales más altos de cada grado (entre quienes presentaron las dos sesiones).</p>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">${ds.map(d => `<div class="card"><h3>${d.grade}.° ${esc(d.name)}</h3>${d.students.filter(s => s.rgr && s.rgr <= 3).sort((a, b) => a.rgr - b.rgr).map(s => `<button type="button" class="top3" data-k="${esc(s.key)}"><span class="medal m${s.rgr}" style="margin:0">${s.rgr}</span><span><b>${esc(s.name)}</b><small>${esc(s.grupo)}</small></span>${cell(s.tp)}</button>`).join('')}</div>`).join('')}</div></section>`;
+  $('#bDlAll').onclick = () => {
+    const head = ['Grado', 'Grupo', 'Código', 'Apellidos', 'Nombres', ...areas, 'Aciertos', 'Preguntas', '% aciertos', 'Nota final', 'Nivel', 'Puesto en el grupo', 'Puesto en el grado'];
+    download('Notas_consolidado_6_a_10.csv', [head, ...ds.flatMap(d => [...d.students].sort(sortGN).map(s => [d.grade, s.grupo, s.id, s.last, s.first, ...areas.map(a => s.a[a] ? fmtN(nota(s.p[a])) : ''), s.c, s.t, n1(s.tp), fmtN(nota(s.tp)), level(s.tp), s.rg || '', s.rgr || '']))]);
+  };
+  $$('tr[data-gg]').forEach(tr => { const go = () => { const [g, grp] = tr.dataset.gg.split('|'); state.grade = +g; state.grupo = grp; state.q = ''; writeHash(); render(); scrollTo(0, 0); }; tr.onclick = go; tr.onkeydown = e => { if (e.key === 'Enter') go(); }; });
+  $$('.top3').forEach(b => b.onclick = () => openStudent(b.dataset.k));
+}
 
 window.APP = {certificate, boletin, recsOf, ALL, RES};
 readHash(); render();

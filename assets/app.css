@@ -135,6 +135,12 @@ th.sort.asc:after{content:" ↑";color:var(--pri)} th.sort.desc:after{content:" 
 .pending h2{margin-top:8px}
 footer{color:var(--ink-3);font-size:12.5px;border-top:1px solid var(--line);margin-top:40px;padding-block:18px 40px}
 
+/* Destacados */
+.top3{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;width:100%;text-align:left;border:none;background:none;border-top:1px solid var(--line);padding:8px 0;cursor:pointer;font-size:13.5px}
+.top3:first-of-type{border-top:none}
+.top3:hover b{color:var(--pri)}
+.top3 small{display:block;color:var(--ink-3)}
+
 /* Diálogos */
 dialog{border:none;border-radius:16px;padding:0;width:calc(100% - 32px);max-width:760px;background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
 dialog::backdrop{background:rgba(10,16,26,.5)}
