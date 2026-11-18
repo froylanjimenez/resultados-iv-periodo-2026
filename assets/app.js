@@ -213,6 +213,7 @@ function openStudent(k) {
   $('#dsTot').innerHTML = `Total ${s.c} de ${s.t} aciertos · ${fmt(s.tp)} % · nota ${fmt(nota(s.tp))} · <span class="pill lv-${level(s.tp)}">${level(s.tp)}</span>${s.rg ? ` · puesto ${s.rg} en el grupo` : ''}${s.rgr ? ` · ${s.rgr} en el grado` : ''}`;
   const rows = d.areas.map(a => { const r = s.a[a.name], gm = mean(d.students.filter(x => x.a[a.name]).map(x => x.p[a.name]));
     if (!r) return `<div class="srow"><span>${esc(a.name)}</span><span class="small muted">No presentó la sesión ${a.s}</span><span></span></div>`;
+    if (s.anul && s.anul.includes(a.s)) return `<div class="srow"><span>${esc(a.name)}</span><span class="small muted">Sesión ${a.s} anulada</span><span class="small">nota 1,0</span></div>`;
     const p = s.p[a.name];
     return `<div class="srow"><span>${esc(a.name)}${medal(s.ra[a.name])}</span><div class="bar" title="Promedio del grado: ${fmt(gm, 0)} %"><i style="width:${p}%;background:${LVC[level(p)]}"></i><u style="left:${gm}%"></u></div><span class="small"><b>${r[0]}/${r[1]}</b> · nota ${fmt(nota(p))}</span></div>`; }).join('');
   const recs = recsOf(s, d);
@@ -272,6 +273,7 @@ function boletin(s, d) {
   <h1>${esc(s.first)} ${esc(s.last)}</h1><div class="meta"><span>Grado ${s.grade}.° · Grupo ${esc(s.grupo)}</span>${s.id ? `<span>Código ${esc(s.id)}</span>` : ''}${s.rg ? `<span>Puesto en el grupo: ${s.rg}</span>` : ''}</div>
   <table><thead><tr><th>Área</th><th style="text-align:right">Aciertos</th><th style="text-align:right">% aciertos</th><th style="text-align:right">Promedio del grado</th><th style="text-align:right">Nota</th><th>Nivel</th></tr></thead><tbody>
   ${d.areas.map(a => { const r = s.a[a.name], gm = mean(d.students.filter(x => x.a[a.name]).map(x => x.p[a.name]));
+    if (r && s.anul && s.anul.includes(a.s)) return `<tr><td>${esc(a.name)}</td><td colspan="3" style="color:#777">Sesión ${a.s} anulada</td><td style="text-align:right"><b>1,0</b></td><td>Bajo</td></tr>`;
     return r ? `<tr><td>${esc(a.name)}</td><td style="text-align:right">${r[0]} / ${r[1]}</td><td style="text-align:right">${fmt(s.p[a.name])} %</td><td style="text-align:right">${fmt(gm)} %</td><td style="text-align:right"><b>${fmt(nota(s.p[a.name]))}</b></td><td>${level(s.p[a.name])}</td></tr>` : `<tr><td>${esc(a.name)}</td><td colspan="5" style="color:#777">No presentó la sesión ${a.s}</td></tr>`; }).join('')}
   <tr class="tot"><td>Total</td><td style="text-align:right">${s.c} / ${s.t}</td><td style="text-align:right">${fmt(s.tp)} %</td><td style="text-align:right">${fmt(mean(d.students.map(x => x.tp)))} %</td><td style="text-align:right">${fmt(nota(s.tp))}</td><td>${level(s.tp)}</td></tr></tbody></table>
   <p class="nota">Nota = 5 × proporción de aciertos (mínimo 1,0). Niveles: Bajo 1,0–2,9 · Básico 3,0–3,9 · Alto 4,0–4,5 · Superior 4,6–5,0.</p>
