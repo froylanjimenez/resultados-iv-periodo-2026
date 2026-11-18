@@ -219,10 +219,10 @@ function openStudent(k) {
     return `<div class="srow"><span>${esc(a.name)}${medal(s.ra[a.name])}</span><div class="bar" title="Promedio del grado: ${fmt(gm, 0)} %"><i style="width:${p}%;background:${LVC[level(p)]}"></i><u style="left:${gm}%"></u></div><span class="small"><b>${r[0]}/${r[1]}</b> · nota ${fmtN(nota(p))}</span></div>`; }).join('');
   const recs = recsOf(s, d);
   $('#dsBody').innerHTML = `<p class="small muted" style="margin-top:0">La raya vertical marca el promedio del grado.</p>${rows}${recs.length ? `<p class="small" style="margin-bottom:0"><b>Reconocimientos:</b> ${recs.map(r => `${ORD[r.puesto]} puesto ${r.tipo === 'general' ? 'general' : 'en ' + esc(r.area)}`).join(' · ')}</p>` : ''}`;
-  $('#dsFoot').innerHTML = `<button class="btn" id="sCsv" type="button">${DL} CSV del estudiante</button><button class="btn" id="sBol" type="button">Imprimir boletín</button>${recs.length ? `<button class="btn pri" id="sRec" type="button">${AWARD} Imprimir reconocimiento${recs.length > 1 ? 's (' + recs.length + ')' : ''}</button>` : ''}`;
+  $('#dsFoot').innerHTML = `${recs.length ? `<input type="text" id="sDocente" placeholder="Docente que firma el reconocimiento" aria-label="Docente que firma el reconocimiento" style="flex:1 1 220px;min-width:0">` : ''}<button class="btn" id="sCsv" type="button">${DL} CSV del estudiante</button><button class="btn" id="sBol" type="button">Imprimir boletín</button>${recs.length ? `<button class="btn pri" id="sRec" type="button">${AWARD} Imprimir reconocimiento${recs.length > 1 ? 's (' + recs.length + ')' : ''}</button>` : ''}`;
   $('#sCsv').onclick = () => csvStudent(s, d);
   $('#sBol').onclick = () => printDocs(boletin(s, d));
-  if (recs.length) $('#sRec').onclick = () => printDocs(recs.map(certificate).join(''));
+  if (recs.length) { $('#sDocente').value = docName; $('#sDocente').oninput = e => setDocente(e.target.value); $('#sRec').onclick = () => printDocs(recs.map(certificate).join('')); }
   const dlg = $('#dStudent'); if (!dlg.open) dlg.showModal();
 }
 
@@ -250,6 +250,11 @@ function csvStudent(s, d) {
     [d.grade, s.grupo, s.id, s.last, s.first, 'TOTAL', s.c, s.t, n1(s.tp), fmtN(nota(s.tp)), level(s.tp), s.rg || '']]);
 }
 
+// ---------- Docente que firma ----------
+let docName = ''; try { docName = localStorage.getItem('docente') || ''; } catch (e) {}
+const docente = () => docName.trim();
+function setDocente(v) { docName = v; try { localStorage.setItem('docente', v); } catch (e) {} }
+
 // ---------- Impresión ----------
 function printDocs(html) {
   $('#print').innerHTML = html; document.body.classList.add('printing');
@@ -266,7 +271,7 @@ function certificate(r) {
     <div class="ttl">RECONOCIMIENTO</div><div class="rib">${ORD[r.puesto]} puesto · ${r.tipo === 'general' ? 'Resultado general' : esc(r.area)}</div>
     <div class="otorga">Se otorga a</div><div class="nom">${esc(s.first)} ${esc(s.last)}</div>
     <div class="txt">del grado ${s.grade}.°, ${motivo}</div>
-    <div class="firmas">${C.firmas.map(f => `<div>${esc(f)}</div>`).join('')}</div>
+    <div class="firmas"><div>${docente() ? `<b>${esc(docente())}</b>` : ''}${esc(C.firmaCertificado || 'Docente')}</div></div>
     <div class="fecha" style="margin-top:8mm">${esc(C.fechaReconocimiento)}</div></div></div>`;
 }
 function boletin(s, d) {
@@ -300,6 +305,7 @@ function openRec(d) {
     return list;
   };
   ['#rGrupo', '#rGen', '#rArea', '#rAreaSel'].forEach(id => $(id).onchange = collect);
+  $('#rDocente').value = docName; $('#rDocente').oninput = e => setDocente(e.target.value);
   collect();
   $('#rPrint').onclick = () => { const l = collect(); $('#dRec').close(); printDocs(l.map(certificate).join('')); };
   $('#dRec').showModal();

@@ -7,6 +7,7 @@ window.CONFIG = {
   anio: 2026,
   prueba: 'Prueba de periodo · Cuadernillo n.º 1',
   fechaReconocimiento: 'Noviembre de 2026',
-  firmas: ['Rector(a)', 'Director(a) de grupo'],
+  firmas: ['Rector(a)', 'Director(a) de grupo'], // boletín
+  firmaCertificado: 'Docente', // reconocimientos: una sola firma
   escudo: '' // ruta opcional a una imagen, por ejemplo 'assets/escudo.png'
 };
