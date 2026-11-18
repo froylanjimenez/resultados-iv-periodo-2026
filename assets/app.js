@@ -9,8 +9,9 @@ const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
 const sd = a => { const m = mean(a); return a.length ? Math.sqrt(mean(a.map(x => (x - m) ** 2))) : null; };
 const LV = ['Bajo', 'Básico', 'Alto', 'Superior'];
 const LVC = {Bajo: 'var(--bajo)', 'Básico': 'var(--basico)', Alto: 'var(--alto)', Superior: 'var(--sup)'};
-const nota = p => Math.max(1, Math.round(50 * p / 100) / 10);
-const level = p => { const n = nota(p); return n < 3 ? 'Bajo' : n < 4 ? 'Básico' : n < 4.6 ? 'Alto' : 'Superior'; };
+const nota = p => Math.round(p);
+const fmtN = x => fmt(x, 0);
+const level = p => { const n = nota(p); return n < 60 ? 'Bajo' : n < 80 ? 'Básico' : n < 90 ? 'Alto' : 'Superior'; };
 const cell = p => p == null ? '<span class="na">—</span>' : `<span class="cell lv-${level(p)}">${fmt(p, 0)}</span>`;
 const ORD = ['', 'Primer', 'Segundo', 'Tercer'];
 const MEDAL = ['', '#c99a12', '#8c96a3', '#b06a33'];
@@ -88,7 +89,7 @@ const AWARD = '<svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="6"/><path d="m
 function render() {
   renderTabs();
   const d = RES[state.grade];
-  $('#foot').textContent = `${C.institucion} (${C.sigla}) · ${C.prueba} · ${C.periodo} ${C.anio}. Nota = 5 × proporción de aciertos (mínimo 1,0). Actualizado: ${window.ACTUALIZADO || ''}.`;
+  $('#foot').textContent = `${C.institucion} (${C.sigla}) · ${C.prueba} · ${C.periodo} ${C.anio}. Escala de 0 a 100 (porcentaje de aciertos). Actualizado: ${window.ACTUALIZADO || ''}.`;
   if (!d || d.status === 'pendiente') {
     $('#view').innerHTML = `<div class="pending"><div class="ic">⏳</div><h2>${state.grade}.° ${esc(d ? d.name : '')}: resultados en proceso</h2><p class="sub">Los resultados de este grado se publicarán cuando termine la calificación.</p></div>`;
     return;
@@ -143,8 +144,8 @@ function renderSummary(d) {
   const ok = ss.filter(s => level(s.tp) !== 'Bajo').length;
   $('#kpis').innerHTML = [
     [ss.length, state.grupo ? `Estudiantes del grupo ${state.grupo}` : 'Estudiantes evaluados', `${new Set(ss.map(s => s.grupo)).size} grupo(s)`],
-    [fmt(mean(tots)) + ' %', 'Promedio de aciertos', `Nota promedio ${fmt(nota(mean(tots)))}`],
-    [fmt(100 * ok / ss.length, 0) + ' %', 'Básico o superior', `${ok} estudiantes con nota ≥ 3,0`],
+    [fmt(mean(tots)) + ' %', 'Promedio de aciertos', `Nota promedio ${fmtN(nota(mean(tots)))}`],
+    [fmt(100 * ok / ss.length, 0) + ' %', 'Básico o superior', `${ok} estudiantes con nota ≥ 60`],
     [fmt(srt[0].m, 0) + ' %', 'Área más alta', srt[0].a.name],
     [fmt(srt.at(-1).m, 0) + ' %', 'Área más baja', srt.at(-1).a.name],
   ].map(([v, l, x]) => `<div class="card kpi"><div class="v">${v}</div><div class="l">${esc(l)}</div><div class="d">${esc(x)}</div></div>`).join('');
@@ -161,8 +162,8 @@ function renderSummary(d) {
   $('#areaBars').innerHTML = svg + `<div class="legend" style="margin-top:6px"><span><i class="sw" style="background:var(--s1)"></i>Sesión 1</span>${d.sessions.includes(2) ? '<span><i class="sw" style="background:var(--s2)"></i>Sesión 2</span>' : ''}<span><i class="sw" style="border:1px dashed var(--basico)"></i>60 % (Básico)</span>${state.grupo ? '<span><i class="sw" style="background:var(--ink);width:2px"></i>Promedio del grado</span>' : ''}</div>`;
   $('#areaLevels').innerHTML = am.map(o => { const c = LV.map(l => o.v.filter(p => level(p) === l).length), n = o.v.length || 1;
     return `<div class="arow"><span>${esc(o.a.name)}</span><div class="dist" title="${LV.map((l, i) => `${l}: ${c[i]}`).join(' · ')}">${c.map((k, i) => k ? `<i style="width:${100 * k / n}%;background:${LVC[LV[i]]}"></i>` : '').join('')}</div></div>`; }).join('');
-  $('#areaTable').innerHTML = `<thead><tr><th>Área</th><th class="num">Preguntas</th><th class="num">Estudiantes</th><th class="num">Promedio %</th><th class="num">Nota</th><th class="num">Desv.</th>${LV.map(l => `<th class="num">${l}</th>`).join('')}</tr></thead><tbody>` +
-    am.map(o => `<tr><td><b>${esc(o.a.name)}</b></td><td class="num">${o.a.n}</td><td class="num">${o.v.length}</td><td>${cell(o.m)}</td><td class="num">${fmt(nota(o.m))}</td><td class="num">${fmt(sd(o.v))}</td>${LV.map(l => { const k = o.v.filter(p => level(p) === l).length; return `<td class="num">${k} <span class="muted small">(${fmt(100 * k / (o.v.length || 1), 0)} %)</span></td>`; }).join('')}</tr>`).join('') + '</tbody>';
+  $('#areaTable').innerHTML = `<thead><tr><th>Área</th><th class="num">Preguntas</th><th class="num">Estudiantes</th><th class="num">Nota promedio</th><th class="num">Desv.</th>${LV.map(l => `<th class="num">${l}</th>`).join('')}</tr></thead><tbody>` +
+    am.map(o => `<tr><td><b>${esc(o.a.name)}</b></td><td class="num">${o.a.n}</td><td class="num">${o.v.length}</td><td>${cell(o.m)}</td><td class="num">${fmt(sd(o.v))}</td>${LV.map(l => { const k = o.v.filter(p => level(p) === l).length; return `<td class="num">${k} <span class="muted small">(${fmt(100 * k / (o.v.length || 1), 0)} %)</span></td>`; }).join('')}</tr>`).join('') + '</tbody>';
 }
 
 function renderGroups(d) {
@@ -174,12 +175,12 @@ function renderGroups(d) {
 const medal = r => r && r <= 3 ? `<span class="medal m${r}" title="${ORD[r]} puesto del grupo">${r}</span>` : '';
 function renderStudents(d) {
   const q = norm(state.q.trim());
-  const cols = [['name', 'Estudiante'], ['grupo', 'Grupo'], ...d.areas.map(a => [a.name, short(a.name)]), ['tp', 'Total %'], ['nota', 'Nota'], ['rg', 'Puesto']];
+  const cols = [['name', 'Estudiante'], ['grupo', 'Grupo'], ...d.areas.map(a => [a.name, short(a.name)]), ['tp', 'Nota final'], ['rg', 'Puesto']];
   const val = (s, k) => k === 'name' ? s.name : k === 'grupo' ? s.grupo : k === 'tp' || k === 'nota' ? s.tp : k === 'rg' ? (s.rg || 999) : (s.p[k] ?? -1);
   const rows = subset(d).filter(s => !q || norm(s.name).includes(q) || (s.id && s.id.includes(q)));
   rows.sort((a, b) => { const x = val(a, state.sortKey), y = val(b, state.sortKey); return (typeof x === 'string' ? x.localeCompare(y, 'es') : x - y) * state.sortDir; });
   $('#stTable').innerHTML = `<thead><tr>${cols.map(([k, l]) => `<th class="sort ${k === state.sortKey ? (state.sortDir > 0 ? 'asc' : 'desc') : ''} ${k === 'name' || k === 'grupo' ? '' : 'num'}" data-k="${esc(k)}" title="${esc(k)}">${esc(l)}</th>`).join('')}</tr></thead><tbody>` +
-    rows.map(s => `<tr class="st" data-k="${esc(s.key)}" tabindex="0"><td><b>${esc(s.name)}</b>${medal(s.rg)}</td><td>${esc(s.grupo)}</td>${d.areas.map(a => `<td>${cell(s.p[a.name])}</td>`).join('')}<td>${cell(s.tp)}</td><td class="num">${fmt(nota(s.tp))}</td><td class="num">${s.rg || '—'}</td></tr>`).join('') + '</tbody>';
+    rows.map(s => `<tr class="st" data-k="${esc(s.key)}" tabindex="0"><td><b>${esc(s.name)}</b>${medal(s.rg)}</td><td>${esc(s.grupo)}</td>${d.areas.map(a => `<td>${cell(s.p[a.name])}</td>`).join('')}<td>${cell(s.tp)}</td><td class="num">${s.rg || '—'}</td></tr>`).join('') + '</tbody>';
   $('#stCount').textContent = `${rows.length} de ${subset(d).length} estudiantes.`;
   $$('#stTable th.sort').forEach(th => th.onclick = () => { const k = th.dataset.k; if (k === state.sortKey) state.sortDir *= -1; else { state.sortKey = k; state.sortDir = k === 'name' || k === 'grupo' || k === 'rg' ? 1 : -1; } renderStudents(d); });
   $$('#stTable tr.st').forEach(tr => { tr.onclick = () => openStudent(tr.dataset.k); tr.onkeydown = e => { if (e.key === 'Enter') openStudent(tr.dataset.k); }; });
@@ -210,12 +211,12 @@ function openStudent(k) {
   const s = byKey(k); if (!s) return; const d = RES[s.grade];
   $('#dsMeta').textContent = `${s.grade}.° ${s.gname} · Grupo ${s.grupo}${s.id ? ' · Código ' + s.id : ''}`;
   $('#dsName').textContent = s.name;
-  $('#dsTot').innerHTML = `Total ${s.c} de ${s.t} aciertos · ${fmt(s.tp)} % · nota ${fmt(nota(s.tp))} · <span class="pill lv-${level(s.tp)}">${level(s.tp)}</span>${s.rg ? ` · puesto ${s.rg} en el grupo` : ''}${s.rgr ? ` · ${s.rgr} en el grado` : ''}`;
+  $('#dsTot').innerHTML = `Total ${s.c} de ${s.t} aciertos · ${fmt(s.tp)} % · nota ${fmtN(nota(s.tp))} · <span class="pill lv-${level(s.tp)}">${level(s.tp)}</span>${s.rg ? ` · puesto ${s.rg} en el grupo` : ''}${s.rgr ? ` · ${s.rgr} en el grado` : ''}`;
   const rows = d.areas.map(a => { const r = s.a[a.name], gm = mean(d.students.filter(x => x.a[a.name]).map(x => x.p[a.name]));
     if (!r) return `<div class="srow"><span>${esc(a.name)}</span><span class="small muted">No presentó la sesión ${a.s}</span><span></span></div>`;
-    if (s.anul && s.anul.includes(a.s)) return `<div class="srow"><span>${esc(a.name)}</span><span class="small muted">Sesión ${a.s} anulada</span><span class="small">nota 1,0</span></div>`;
+    if (s.anul && s.anul.includes(a.s)) return `<div class="srow"><span>${esc(a.name)}</span><span class="small muted">Sesión ${a.s} anulada</span><span class="small">nota 0</span></div>`;
     const p = s.p[a.name];
-    return `<div class="srow"><span>${esc(a.name)}${medal(s.ra[a.name])}</span><div class="bar" title="Promedio del grado: ${fmt(gm, 0)} %"><i style="width:${p}%;background:${LVC[level(p)]}"></i><u style="left:${gm}%"></u></div><span class="small"><b>${r[0]}/${r[1]}</b> · nota ${fmt(nota(p))}</span></div>`; }).join('');
+    return `<div class="srow"><span>${esc(a.name)}${medal(s.ra[a.name])}</span><div class="bar" title="Promedio del grado: ${fmt(gm, 0)} %"><i style="width:${p}%;background:${LVC[level(p)]}"></i><u style="left:${gm}%"></u></div><span class="small"><b>${r[0]}/${r[1]}</b> · nota ${fmtN(nota(p))}</span></div>`; }).join('');
   const recs = recsOf(s, d);
   $('#dsBody').innerHTML = `<p class="small muted" style="margin-top:0">La raya vertical marca el promedio del grado.</p>${rows}${recs.length ? `<p class="small" style="margin-bottom:0"><b>Reconocimientos:</b> ${recs.map(r => `${ORD[r.puesto]} puesto ${r.tipo === 'general' ? 'general' : 'en ' + esc(r.area)}`).join(' · ')}</p>` : ''}`;
   $('#dsFoot').innerHTML = `<button class="btn" id="sCsv" type="button">${DL} CSV del estudiante</button><button class="btn" id="sBol" type="button">Imprimir boletín</button>${recs.length ? `<button class="btn pri" id="sRec" type="button">${AWARD} Imprimir reconocimiento${recs.length > 1 ? 's (' + recs.length + ')' : ''}</button>` : ''}`;
@@ -236,17 +237,17 @@ function download(name, rows) {
 const sortGN = (a, b) => a.grupo.localeCompare(b.grupo) || a.name.localeCompare(b.name, 'es');
 function csvGrado(d, list, name) {
   const head = ['Grado', 'Grupo', 'Código', 'Apellidos', 'Nombres', ...d.areas.map(a => a.name), 'Aciertos', 'Preguntas', '% aciertos', 'Nota final', 'Nivel', 'Puesto en el grupo'];
-  download(name, [head, ...[...list].sort(sortGN).map(s => [d.grade, s.grupo, s.id, s.last, s.first, ...d.areas.map(a => s.a[a.name] ? n1(nota(s.p[a.name])) : ''), s.c, s.t, n1(s.tp), n1(nota(s.tp)), level(s.tp), s.rg || ''])]);
+  download(name, [head, ...[...list].sort(sortGN).map(s => [d.grade, s.grupo, s.id, s.last, s.first, ...d.areas.map(a => s.a[a.name] ? fmtN(nota(s.p[a.name])) : ''), s.c, s.t, n1(s.tp), fmtN(nota(s.tp)), level(s.tp), s.rg || ''])]);
 }
 function csvArea(d, area, grupo) {
   const list = d.students.filter(s => s.a[area] && (!grupo || s.grupo === grupo)).sort(sortGN);
   download(`Notas_${grupo ? slug(grupo) : d.grade}_${slug(area)}.csv`, [['Grado', 'Grupo', 'Código', 'Apellidos', 'Nombres', 'Área', 'Aciertos', 'Preguntas', '% aciertos', 'Nota', 'Nivel', 'Puesto en el grupo'],
-    ...list.map(s => [d.grade, s.grupo, s.id, s.last, s.first, area, s.a[area][0], s.a[area][1], n1(s.p[area]), n1(nota(s.p[area])), level(s.p[area]), s.ra[area]])]);
+    ...list.map(s => [d.grade, s.grupo, s.id, s.last, s.first, area, s.a[area][0], s.a[area][1], n1(s.p[area]), fmtN(nota(s.p[area])), level(s.p[area]), s.ra[area]])]);
 }
 function csvStudent(s, d) {
   download(`Notas_${slug(s.name)}.csv`, [['Grado', 'Grupo', 'Código', 'Apellidos', 'Nombres', 'Área', 'Aciertos', 'Preguntas', '% aciertos', 'Nota', 'Nivel', 'Puesto en el grupo'],
-    ...d.areas.filter(a => s.a[a.name]).map(a => [d.grade, s.grupo, s.id, s.last, s.first, a.name, s.a[a.name][0], s.a[a.name][1], n1(s.p[a.name]), n1(nota(s.p[a.name])), level(s.p[a.name]), s.ra[a.name]]),
-    [d.grade, s.grupo, s.id, s.last, s.first, 'TOTAL', s.c, s.t, n1(s.tp), n1(nota(s.tp)), level(s.tp), s.rg || '']]);
+    ...d.areas.filter(a => s.a[a.name]).map(a => [d.grade, s.grupo, s.id, s.last, s.first, a.name, s.a[a.name][0], s.a[a.name][1], n1(s.p[a.name]), fmtN(nota(s.p[a.name])), level(s.p[a.name]), s.ra[a.name]]),
+    [d.grade, s.grupo, s.id, s.last, s.first, 'TOTAL', s.c, s.t, n1(s.tp), fmtN(nota(s.tp)), level(s.tp), s.rg || '']]);
 }
 
 // ---------- Impresión ----------
@@ -273,10 +274,10 @@ function boletin(s, d) {
   <h1>${esc(s.first)} ${esc(s.last)}</h1><div class="meta"><span>Grado ${s.grade}.° · Grupo ${esc(s.grupo)}</span>${s.id ? `<span>Código ${esc(s.id)}</span>` : ''}${s.rg ? `<span>Puesto en el grupo: ${s.rg}</span>` : ''}</div>
   <table><thead><tr><th>Área</th><th style="text-align:right">Aciertos</th><th style="text-align:right">% aciertos</th><th style="text-align:right">Promedio del grado</th><th style="text-align:right">Nota</th><th>Nivel</th></tr></thead><tbody>
   ${d.areas.map(a => { const r = s.a[a.name], gm = mean(d.students.filter(x => x.a[a.name]).map(x => x.p[a.name]));
-    if (r && s.anul && s.anul.includes(a.s)) return `<tr><td>${esc(a.name)}</td><td colspan="3" style="color:#777">Sesión ${a.s} anulada</td><td style="text-align:right"><b>1,0</b></td><td>Bajo</td></tr>`;
-    return r ? `<tr><td>${esc(a.name)}</td><td style="text-align:right">${r[0]} / ${r[1]}</td><td style="text-align:right">${fmt(s.p[a.name])} %</td><td style="text-align:right">${fmt(gm)} %</td><td style="text-align:right"><b>${fmt(nota(s.p[a.name]))}</b></td><td>${level(s.p[a.name])}</td></tr>` : `<tr><td>${esc(a.name)}</td><td colspan="5" style="color:#777">No presentó la sesión ${a.s}</td></tr>`; }).join('')}
-  <tr class="tot"><td>Total</td><td style="text-align:right">${s.c} / ${s.t}</td><td style="text-align:right">${fmt(s.tp)} %</td><td style="text-align:right">${fmt(mean(d.students.map(x => x.tp)))} %</td><td style="text-align:right">${fmt(nota(s.tp))}</td><td>${level(s.tp)}</td></tr></tbody></table>
-  <p class="nota">Nota = 5 × proporción de aciertos (mínimo 1,0). Niveles: Bajo 1,0–2,9 · Básico 3,0–3,9 · Alto 4,0–4,5 · Superior 4,6–5,0.</p>
+    if (r && s.anul && s.anul.includes(a.s)) return `<tr><td>${esc(a.name)}</td><td colspan="3" style="color:#777">Sesión ${a.s} anulada</td><td style="text-align:right"><b>0</b></td><td>Bajo</td></tr>`;
+    return r ? `<tr><td>${esc(a.name)}</td><td style="text-align:right">${r[0]} / ${r[1]}</td><td style="text-align:right">${fmt(s.p[a.name])} %</td><td style="text-align:right">${fmt(gm)} %</td><td style="text-align:right"><b>${fmtN(nota(s.p[a.name]))}</b></td><td>${level(s.p[a.name])}</td></tr>` : `<tr><td>${esc(a.name)}</td><td colspan="5" style="color:#777">No presentó la sesión ${a.s}</td></tr>`; }).join('')}
+  <tr class="tot"><td>Total</td><td style="text-align:right">${s.c} / ${s.t}</td><td style="text-align:right">${fmt(s.tp)} %</td><td style="text-align:right">${fmt(mean(d.students.map(x => x.tp)))} %</td><td style="text-align:right">${fmtN(nota(s.tp))}</td><td>${level(s.tp)}</td></tr></tbody></table>
+  <p class="nota">Escala de 0 a 100 (porcentaje de aciertos). Niveles: Bajo 0–59 · Básico 60–79 · Alto 80–89 · Superior 90–100.</p>
   <div style="display:flex;gap:30mm;margin-top:28mm;font-size:10pt">${C.firmas.map(f => `<div style="border-top:0.3mm solid #333;padding-top:2mm;width:60mm">${esc(f)}</div>`).join('')}</div></div>`;
 }
 

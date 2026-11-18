@@ -14,8 +14,8 @@ Sitio estático con los resultados de la prueba de periodo (Cuadernillo n.º 1) 
 
 ## Escala
 
-Nota = 5 × proporción de aciertos (mínimo 1,0).
-Niveles: Bajo 1,0–2,9 · Básico 3,0–3,9 · Alto 4,0–4,5 · Superior 4,6–5,0.
+Escala de 0 a 100: nota = porcentaje de aciertos, redondeado.
+Niveles: Bajo 0–59 · Básico 60–79 · Alto 80–89 · Superior 90–100.
 Los puestos usan el total de aciertos; los empates comparten puesto. Solo compiten por el puesto general quienes presentaron todas las sesiones.
 
 ## Estructura
