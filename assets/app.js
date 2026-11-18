@@ -15,7 +15,7 @@ const level = p => { const n = nota(p); return n < 60 ? 'Bajo' : n < 80 ? 'Bási
 const cell = p => p == null ? '<span class="na">—</span>' : `<span class="cell lv-${level(p)}">${fmt(p, 0)}</span>`;
 const ORD = ['', 'Primer', 'Segundo', 'Tercer'];
 const MEDAL = ['', '#c99a12', '#8c96a3', '#b06a33'];
-const SHORT = {'Matemáticas':'Mat','Ética y valores':'Ética','Lengua Castellana':'Leng','Educación Física':'E. Fís','Ciencias Sociales':'Soc','Gestión Empresarial':'Gest','Ciencias Naturales':'Nat','Educación Artística':'Art','Inglés':'Ing','Educación Religiosa':'Rel','Tecnología':'Tec','Química':'Quím','Física':'Fís','Filosofía':'Filo','Ciencias Políticas':'Pol','Ciencias Económicas':'Econ'};
+const SHORT = {'Matemáticas':'Mat','Ética y valores':'Ética','Lengua Castellana':'Leng','Educación Física':'E. Fís','Ciencias Sociales':'Soc','Gestión Empresarial':'Gest','Ciencias Naturales':'Nat','Educación Artística':'Art','Inglés':'Ing','Educación Religiosa':'Rel','Tecnología':'Tec','Química':'Quím','Física':'Fís','Filosofía':'Filo','Ciencias Políticas':'Pol','Ciencias Políticas y Económicas':'Pol','Ciencias Económicas':'Econ'};
 const short = a => SHORT[a] || a.slice(0, 5);
 const slug = s => norm(s).replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 
@@ -151,7 +151,7 @@ function renderSummary(d) {
   ].map(([v, l, x]) => `<div class="card kpi"><div class="v">${v}</div><div class="l">${esc(l)}</div><div class="d">${esc(x)}</div></div>`).join('');
   $('#areasSub').textContent = state.grupo ? `Grupo ${state.grupo} frente al promedio del grado.` : 'Promedio del grado y distribución de estudiantes por nivel de desempeño.';
   const gradeMean = a => mean(d.students.filter(s => s.a[a.name]).map(s => s.p[a.name]));
-  const W = 540, rowH = 28, padL = 152, padR = 48, H = am.length * rowH + 22, x = v => padL + (W - padL - padR) * v / 100;
+  const W = 540, rowH = 28, padL = Math.max(152, 12 + 6.6 * Math.max(...am.map(o => o.a.name.length))), padR = 48, H = am.length * rowH + 22, x = v => padL + (W - padL - padR) * v / 100;
   let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Promedio de aciertos por área">`;
   [0, 25, 50, 75, 100].forEach(t => svg += `<line x1="${x(t)}" x2="${x(t)}" y1="0" y2="${H - 18}" stroke="var(--line)"/><text x="${x(t)}" y="${H - 4}" text-anchor="middle">${t}</text>`);
   svg += `<line x1="${x(60)}" x2="${x(60)}" y1="0" y2="${H - 18}" stroke="var(--basico)" stroke-dasharray="3 3"/>`;
