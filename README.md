@@ -7,7 +7,7 @@ Sitio estático con los resultados de la prueba de periodo (Cuadernillo n.º 1) 
 - **Pestañas por grado** y filtro por **grupo** (el enlace conserva el grado y el grupo, por ejemplo `#grado-6-g2`).
 - **Buscador global** de estudiantes en todos los grados (`Ctrl K`).
 - Resultados **por área**, **comparativo por grupo**, **tabla de estudiantes** ordenable y **análisis por pregunta**.
-- **Descargar CSV** de notas: grado completo, por grupo, por área (respeta el grupo filtrado) y por estudiante.
+- **Descargar CSV** de notas: grado completo, por grupo, por área y grupo puntual (o área en todo el grado) y por estudiante.
   Los CSV usan `;` como separador y coma decimal, listos para Excel en español.
 - **Reconocimientos** imprimibles (carta horizontal) para los puestos 1, 2 y 3 de cada grupo, en el total y por área.
 - **Boletín individual** imprimible (carta vertical) desde la ficha de cada estudiante.

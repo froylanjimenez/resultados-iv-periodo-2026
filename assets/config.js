@@ -1,6 +1,7 @@
 // Datos institucionales usados en reconocimientos y boletines. Editar aquí.
 window.CONFIG = {
-  institucion: 'CESUM',
+  institucion: 'Concentración Educativa del Sur de Montelíbano',
+  sigla: 'CESUM',
   lema: 'Formamos con conocimiento y valores',
   periodo: 'IV periodo',
   anio: 2026,

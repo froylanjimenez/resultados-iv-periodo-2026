@@ -69,9 +69,9 @@ function writeHash() {
 // ---------- Tema ----------
 (() => { let t = null; try { t = localStorage.getItem('theme'); } catch (e) {} if (t) document.documentElement.dataset.theme = t;
   $('#themebtn').onclick = () => { const dark = matchMedia('(prefers-color-scheme: dark)').matches; const cur = document.documentElement.dataset.theme || (dark ? 'dark' : 'light'); const nx = cur === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = nx; try { localStorage.setItem('theme', nx); } catch (e) {} }; })();
-$('#instName').textContent = C.institucion;
-$('#instSub').textContent = `Resultados · ${C.periodo} ${C.anio}`;
-document.title = `Resultados ${C.periodo} ${C.anio} · ${C.institucion}`;
+$('#instName').textContent = C.sigla;
+$('#instSub').textContent = `${C.institucion} · Resultados ${C.periodo} ${C.anio}`;
+document.title = `Resultados ${C.periodo} ${C.anio} · ${C.sigla}`;
 
 // ---------- Pestañas ----------
 function renderTabs() {
@@ -88,7 +88,7 @@ const AWARD = '<svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="6"/><path d="m
 function render() {
   renderTabs();
   const d = RES[state.grade];
-  $('#foot').textContent = `${C.institucion} · ${C.prueba} · ${C.periodo} ${C.anio}. Nota = 5 × proporción de aciertos (mínimo 1,0). Actualizado: ${window.ACTUALIZADO || ''}.`;
+  $('#foot').textContent = `${C.institucion} (${C.sigla}) · ${C.prueba} · ${C.periodo} ${C.anio}. Nota = 5 × proporción de aciertos (mínimo 1,0). Actualizado: ${window.ACTUALIZADO || ''}.`;
   if (!d || d.status === 'pendiente') {
     $('#view').innerHTML = `<div class="pending"><div class="ic">⏳</div><h2>${state.grade}.° ${esc(d ? d.name : '')}: resultados en proceso</h2><p class="sub">Los resultados de este grado se publicarán cuando termine la calificación.</p></div>`;
     return;
@@ -103,8 +103,10 @@ function render() {
         <div class="lbl">Notas de todas las áreas</div>
         <button data-dl="grado">Grado completo (${d.students.length} estudiantes)</button>
         ${groups.map(g => `<button data-dl="grupo" data-g="${esc(g)}">Grupo ${esc(g)}</button>`).join('')}
-        <hr><div class="lbl">Por área ${state.grupo ? '· grupo ' + esc(state.grupo) : '· todo el grado'}</div>
-        ${d.areas.map(a => `<button data-dl="area" data-a="${esc(a.name)}">${esc(a.name)}</button>`).join('')}
+        <hr><div class="lbl">Por área y grupo</div>
+        <div class="dlform"><label for="dlArea">Área</label><select id="dlArea">${d.areas.map(a => `<option>${esc(a.name)}</option>`).join('')}</select>
+        <label for="dlGrupo">Grupo</label><select id="dlGrupo"><option value="">Todo el grado</option>${groups.map(g => `<option ${g === state.grupo ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select>
+        <button class="btn pri" type="button" data-dl="area">${DL} Descargar</button></div>
       </div></div>
     <button class="btn pri" id="bRec" type="button">${AWARD} Reconocimientos</button>
   </div>
@@ -123,10 +125,10 @@ function render() {
   $('#fq').oninput = e => { state.q = e.target.value; renderStudents(d); };
   const bDl = $('#bDl'), mDl = $('#mDl');
   bDl.onclick = e => { e.stopPropagation(); mDl.hidden = !mDl.hidden; bDl.setAttribute('aria-expanded', !mDl.hidden); };
-  mDl.onclick = e => { const b = e.target.closest('button'); if (!b) return; mDl.hidden = true;
+  mDl.onclick = e => { e.stopPropagation(); const b = e.target.closest('button'); if (!b) return; mDl.hidden = true;
     if (b.dataset.dl === 'grado') csvGrado(d, d.students, `Notas_${d.grade}_${slug(d.name)}_completo.csv`);
     if (b.dataset.dl === 'grupo') csvGrado(d, d.students.filter(s => s.grupo === b.dataset.g), `Notas_${b.dataset.g}.csv`);
-    if (b.dataset.dl === 'area') csvArea(d, b.dataset.a); };
+    if (b.dataset.dl === 'area') csvArea(d, $('#dlArea').value, $('#dlGrupo').value); };
   $('#bRec').onclick = () => openRec(d);
   renderSummary(d); renderGroups(d); renderStudents(d); renderItems(d);
 }
@@ -235,9 +237,9 @@ function csvGrado(d, list, name) {
   const head = ['Grado', 'Grupo', 'Código', 'Apellidos', 'Nombres', ...d.areas.map(a => a.name), 'Aciertos', 'Preguntas', '% aciertos', 'Nota final', 'Nivel', 'Puesto en el grupo'];
   download(name, [head, ...[...list].sort(sortGN).map(s => [d.grade, s.grupo, s.id, s.last, s.first, ...d.areas.map(a => s.a[a.name] ? n1(nota(s.p[a.name])) : ''), s.c, s.t, n1(s.tp), n1(nota(s.tp)), level(s.tp), s.rg || ''])]);
 }
-function csvArea(d, area) {
-  const list = subset(d).filter(s => s.a[area]).sort(sortGN);
-  download(`Notas_${state.grupo || d.grade}_${slug(area)}.csv`, [['Grado', 'Grupo', 'Código', 'Apellidos', 'Nombres', 'Área', 'Aciertos', 'Preguntas', '% aciertos', 'Nota', 'Nivel', 'Puesto en el grupo'],
+function csvArea(d, area, grupo) {
+  const list = d.students.filter(s => s.a[area] && (!grupo || s.grupo === grupo)).sort(sortGN);
+  download(`Notas_${grupo ? slug(grupo) : d.grade}_${slug(area)}.csv`, [['Grado', 'Grupo', 'Código', 'Apellidos', 'Nombres', 'Área', 'Aciertos', 'Preguntas', '% aciertos', 'Nota', 'Nivel', 'Puesto en el grupo'],
     ...list.map(s => [d.grade, s.grupo, s.id, s.last, s.first, area, s.a[area][0], s.a[area][1], n1(s.p[area]), n1(nota(s.p[area])), level(s.p[area]), s.ra[area]])]);
 }
 function csvStudent(s, d) {
@@ -258,7 +260,7 @@ function certificate(r) {
     ? `por ocupar el <b>${ORD[r.puesto].toLowerCase()} puesto</b> del grupo <b>${esc(s.grupo)}</b> en el resultado general de la ${esc(C.prueba.split('·')[0].trim().toLowerCase())} del ${esc(C.periodo)} ${C.anio}, con ${s.c} de ${s.t} respuestas correctas (${fmt(gp)} %).`
     : `por ocupar el <b>${ORD[r.puesto].toLowerCase()} puesto</b> del grupo <b>${esc(s.grupo)}</b> en el área de <b>${esc(r.area)}</b> en la ${esc(C.prueba.split('·')[0].trim().toLowerCase())} del ${esc(C.periodo)} ${C.anio}, con ${s.a[r.area][0]} de ${s.a[r.area][1]} respuestas correctas.`;
   return `<div class="cert"><div class="cert-in">${C.escudo ? `<img class="escudo" src="${esc(C.escudo)}" alt="">` : ''}<div class="medalla" style="background:${MEDAL[r.puesto]}">${r.puesto}.°</div>
-    <div class="inst">${esc(C.institucion)}</div><div class="lema">${esc(C.lema)}</div>
+    <div class="inst">${esc(C.institucion)}</div><div class="sigla">${esc(C.sigla)}</div><div class="lema">${esc(C.lema)}</div>
     <div class="ttl">RECONOCIMIENTO</div><div class="rib">${ORD[r.puesto]} puesto · ${r.tipo === 'general' ? 'Resultado general' : esc(r.area)}</div>
     <div class="otorga">Se otorga a</div><div class="nom">${esc(s.first)} ${esc(s.last)}</div>
     <div class="txt">del grado ${s.grade}.°, ${motivo}</div>
@@ -266,7 +268,7 @@ function certificate(r) {
     <div class="fecha" style="margin-top:8mm">${esc(C.fechaReconocimiento)}</div></div></div>`;
 }
 function boletin(s, d) {
-  return `<div class="bol"><div class="bh"><div><b>${esc(C.institucion)}</b><div style="font-size:9.5pt;color:#555;font-style:italic">${esc(C.lema)}</div></div><div style="text-align:right;font-size:10pt;color:#444">${esc(C.prueba)}<br>${esc(C.periodo)} ${C.anio}</div></div>
+  return `<div class="bol"><div class="bh"><div><b>${esc(C.sigla)}</b><div style="font-size:9.5pt;color:#333">${esc(C.institucion)}</div><div style="font-size:9.5pt;color:#555;font-style:italic">${esc(C.lema)}</div></div><div style="text-align:right;font-size:10pt;color:#444">${esc(C.prueba)}<br>${esc(C.periodo)} ${C.anio}</div></div>
   <h1>${esc(s.first)} ${esc(s.last)}</h1><div class="meta"><span>Grado ${s.grade}.° · Grupo ${esc(s.grupo)}</span>${s.id ? `<span>Código ${esc(s.id)}</span>` : ''}${s.rg ? `<span>Puesto en el grupo: ${s.rg}</span>` : ''}</div>
   <table><thead><tr><th>Área</th><th style="text-align:right">Aciertos</th><th style="text-align:right">% aciertos</th><th style="text-align:right">Promedio del grado</th><th style="text-align:right">Nota</th><th>Nivel</th></tr></thead><tbody>
   ${d.areas.map(a => { const r = s.a[a.name], gm = mean(d.students.filter(x => x.a[a.name]).map(x => x.p[a.name]));

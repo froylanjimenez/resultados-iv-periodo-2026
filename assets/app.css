@@ -74,6 +74,8 @@ select,input[type=search]{border:1px solid var(--line);background:var(--surface)
 .menu-list .lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);padding:8px 10px 4px;font-weight:700}
 .menu-list button{display:block;width:100%;text-align:left;border:none;background:none;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:14px}
 .menu-list button:hover{background:var(--surface-2)}
+.dlform{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;padding:4px 10px 8px;font-size:13.5px}
+.dlform .btn{grid-column:1/-1;justify-content:center}
 .menu-list hr{border:none;border-top:1px solid var(--line);margin:6px 0}
 
 /* Secciones */
@@ -158,7 +160,8 @@ dialog::backdrop{background:rgba(10,16,26,.5)}
 .cert{width:279.4mm;height:215.9mm;padding:12mm;page-break-after:always;break-after:page;background:#fff;color:#1b2333;font-family:var(--f-cert)}
 .cert-in{height:100%;border:2.5mm solid #164a8a;outline:0.6mm solid #164a8a;outline-offset:-5mm;padding:16mm 22mm;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative}
 .cert-in:after{content:"";position:absolute;inset:4mm;border:0.4mm solid #007a73}
-.cert .inst{font-family:var(--f-ui);font-weight:900;letter-spacing:.3em;color:#164a8a;font-size:15pt}
+.cert .inst{font-family:var(--f-ui);font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#164a8a;font-size:13.5pt;max-width:190mm}
+.cert .sigla{font-family:var(--f-ui);font-weight:900;letter-spacing:.3em;color:#007a73;font-size:11pt;margin-top:1mm}
 .cert .lema{font-style:italic;color:#555;font-size:12pt;margin-top:1mm}
 .cert .ttl{font-size:40pt;letter-spacing:.12em;color:#164a8a;margin:9mm 0 1mm;font-weight:600}
 .cert .rib{font-family:var(--f-ui);font-size:11pt;letter-spacing:.2em;text-transform:uppercase;color:#d16812;font-weight:700}
