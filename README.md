@@ -1,0 +1,31 @@
+# Resultados IV periodo 2026
+
+Sitio estático con los resultados de la prueba de periodo (Cuadernillo n.º 1) de los grados 6.° a 10.°.
+
+## Funciones
+
+- **Pestañas por grado** y filtro por **grupo** (el enlace conserva el grado y el grupo, por ejemplo `#grado-6-g2`).
+- **Buscador global** de estudiantes en todos los grados (`Ctrl K`).
+- Resultados **por área**, **comparativo por grupo**, **tabla de estudiantes** ordenable y **análisis por pregunta**.
+- **Descargar CSV** de notas: grado completo, por grupo, por área (respeta el grupo filtrado) y por estudiante.
+  Los CSV usan `;` como separador y coma decimal, listos para Excel en español.
+- **Reconocimientos** imprimibles (carta horizontal) para los puestos 1, 2 y 3 de cada grupo, en el total y por área.
+- **Boletín individual** imprimible (carta vertical) desde la ficha de cada estudiante.
+
+## Escala
+
+Nota = 5 × proporción de aciertos (mínimo 1,0).
+Niveles: Bajo 1,0–2,9 · Básico 3,0–3,9 · Alto 4,0–4,5 · Superior 4,6–5,0.
+Los puestos usan el total de aciertos; los empates comparten puesto. Solo compiten por el puesto general quienes presentaron todas las sesiones.
+
+## Estructura
+
+```
+index.html          página
+assets/app.css      estilos (pantalla e impresión)
+assets/app.js       lógica
+assets/config.js    institución, lema, firmas, fecha y escudo de los reconocimientos
+data/gN.js          resultados de cada grado (generados)
+```
+
+Para cambiar los textos de los reconocimientos o agregar el escudo, edita `assets/config.js`.

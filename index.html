@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Resultados IV periodo 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=EB+Garamond:ital,wght@0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><b id="instName">CESUM</b><span id="instSub">Resultados · IV periodo 2026</span></div>
+    <div class="gsearch" role="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="gq" type="search" placeholder="Buscar estudiante en todos los grados…" autocomplete="off" aria-label="Buscar estudiante en todos los grados" aria-controls="gres">
+      <kbd>Ctrl K</kbd>
+      <div class="results" id="gres" hidden></div>
+    </div>
+    <button class="iconbtn" id="themebtn" type="button" aria-label="Cambiar tema claro u oscuro">◐</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Grado"></nav>
+  <div id="view"></div>
+  <footer id="foot"></footer>
+</main>
+
+<dialog id="dStudent" aria-labelledby="dsName">
+  <div class="dh"><div><div class="eyebrow" id="dsMeta"></div><h2 id="dsName"></h2><div class="small muted" id="dsTot"></div></div><button class="x" data-close aria-label="Cerrar">×</button></div>
+  <div class="db" id="dsBody"></div>
+  <div class="df" id="dsFoot"></div>
+</dialog>
+
+<dialog id="dRec" aria-labelledby="drTitle">
+  <div class="dh"><div><div class="eyebrow">Reconocimientos</div><h2 id="drTitle">Imprimir reconocimientos</h2><div class="small muted">Puestos 1, 2 y 3 de cada grupo. Los empates comparten puesto.</div></div><button class="x" data-close aria-label="Cerrar">×</button></div>
+  <div class="db">
+    <div class="opts">
+      <label for="rGrupo">Grupo <select id="rGrupo"></select></label>
+      <label><input type="checkbox" id="rGen" checked> Puesto general (total de la prueba)</label>
+      <label><input type="checkbox" id="rArea"> Puesto por área</label>
+      <label for="rAreaSel">Área <select id="rAreaSel"></select></label>
+    </div>
+    <div class="recs" id="rList"></div>
+  </div>
+  <div class="df"><span class="small muted" id="rCount" style="margin-right:auto;align-self:center"></span><button class="btn" data-close type="button">Cancelar</button><button class="btn pri" id="rPrint" type="button">Imprimir</button></div>
+</dialog>
+
+<div id="print"></div>
+<script src="assets/config.js"></script>
+<script src="data/index.js"></script>
+<script src="data/g6.js"></script>
+<script src="data/g7.js"></script>
+<script src="data/g8.js"></script>
+<script src="data/g9.js"></script>
+<script src="data/g10.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
